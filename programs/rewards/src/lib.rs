@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use rand::Rng;
 
 declare_id!("AAv2GZesLSUJm2Q63prFfkztTYEgzXLWfTfBJygC2dW5");
 
@@ -29,7 +30,9 @@ mod rewards {
         }
 
         // RNG-based taks availability
-        let task_available = rand::random::<bool>();
+        let mut rng = rand::thread_rng();
+        let task_available: bool = rng.gen();
+        // let task_available = rand::random::<bool>();
         require!(task_available, CustomeError::TaskUnavailable);
 
         let mut base_reward = match activity_type.as_str() {
@@ -62,14 +65,15 @@ mod rewards {
 
         // Implement anti-faming penalty
         if let Some(last_task) = &user_account.last_task {
-            if (last_task == &activity_type) {
+            if last_task == &activity_type {
                 user_account.repeated_task_count += 1;
             } else {
                 user_account.repeated_task_count = 1;
             }
 
             if user_account.repeated_task_count >= 3 {
-                base_reward /= 2;
+                base_reward = user_account.rewards[user_account.rewards.len() - 1].amount / 2;
+                // base_reward /= 2;
             }
         }
 
